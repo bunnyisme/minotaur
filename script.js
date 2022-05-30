@@ -34,7 +34,8 @@ let p = 4;
 
 // Public trackers
 let moveCounter = 0;
-
+let url = new URL(window.location.href)
+console.log(url.search)
 
 // Private trackers
 let res;
@@ -119,6 +120,31 @@ function resetPosition() {
     drawBoard();
 }
 
+const exit_image = new Image();
+exit_image.src = './imgs/exit.png';
+exit_image.onload = function () {
+    ctx.drawImage(exit_image, ...getInnerRect(...exit));
+};
+
+const hero_image = new Image();
+hero_image.src = './imgs/hero.png';
+hero_image.onload = function () {
+    ctx.drawImage(hero_image, ...getInnerRect(...hero));
+};
+
+const minotaur_image = new Image();
+minotaur_image.src = './imgs/minotaur.png';
+minotaur_image.onload = function () {
+    ctx.drawImage(minotaur_image, ...getInnerRect(...minotaur));
+};
+
+function addImage(row, col, name) {
+    if (name == "hero") img = hero_image;
+    else if (name == "exit") img = exit_image;
+    else if (name == "minotaur") img = minotaur_image;
+    else return;
+    ctx.drawImage(img, ...getInnerRect(row, col));
+}
 
 function drawBoard() {
     ctx.rect(0, 0, width, height)
@@ -140,9 +166,12 @@ function drawBoard() {
         drawLine(x, y, 1, len)
     }
 
-    fillRect(...exit, "blue");
-    fillRect(...hero, "green");
-    fillRect(...minotaur, "red");
+    //fillRect(...exit, "blue");
+    //fillRect(...hero, "green");
+    //fillRect(...minotaur, "red");
+    addImage(...exit, 'exit')
+    addImage(...hero, 'hero')
+    addImage(...minotaur, 'minotaur')
 
 
 
