@@ -2,26 +2,55 @@
 
 var canvas = document.getElementById("canvas");
 let text = document.getElementById("text");
+let movecounter = document.getElementById("movecounter");
 let width = canvas.width;
 let height = canvas.height;
 var ctx = canvas.getContext("2d");
 let buffer = 10; // pixels
-let dbuffer = buffer * 2;
+
+/* 
+* THIS IS THE LEVEL 0 MAP SETUP
+* let p = 3; // squares per side
+* // Format [cell thats below it], [row,col]
+* let horizontalWalls = [[1, 1], [2, 1]];
+* //Format [cell thats right of it]. [row,col]
+* let verticalWalls = [[1, 2]];
+* 
+* let minotaurInit = [0, 2];
+* let heroInit = [2, 0];
+* let exitInit = [1, 2];
+*/
+
+
+// config
+let horizontalWalls = [[3, 0], [2, 2], [1, 3]];
+let verticalWalls = [[2, 1], [2, 3], [3, 2], [1, 2]];
+let minotaurInit = [0, 0];
+let heroInit = [3, 0];
+let exitInit = [0, 1];
+let maxMoves = 13;
+
+let p = 4;
+
+// Public trackers
+let moveCounter = 0;
+
+
+// Private trackers
 let res;
 let turnused;
+let canplay = true;
 
-let p = 3; // number of squares per side
+let squareSize = (width - 2 * buffer) / p;
+let dsquareSize = squareSize * 0.75
 
-let grid = new Array(p);
+/*let grid = new Array(p);
 for (let i = 0; i < 3; i++)
     grid[i] = new Array(p);
-let squareSize = (width - 2 * buffer) / p;
-let dsquareSize = (width - 4 * dbuffer) / p;
+    */
 
-// Format [cell thats below it], r,c
-let horizontalWalls = [[1, 1], [2, 1]];
-//Format [cell thats right of it]. r,c
-let verticalWalls = [[1, 2]];
+
+
 
 // add walls on border
 // [0, 0] ... [0, p-1], [p-1, 0] ... [p-1, p-1]
@@ -32,9 +61,7 @@ for (let i = 0; i < p; i++) {
     verticalWalls.push([i, p]);
 }
 
-let minotaurInit = [0, 2];
-let heroInit = [2, 0];
-let exitInit = [1, 2];
+
 
 let minotaur = minotaurInit.slice();
 let hero = heroInit.slice();
@@ -52,8 +79,8 @@ function getRect(row, col) {
 }
 
 function getInnerRect(row, col) {
-
-    return [dbuffer + squareSize * col, dbuffer + squareSize * row, dsquareSize, dsquareSize];
+    // A mathmatician told me to do this idk why it works
+    return [buffer + squareSize * (col + 1 / 8), buffer + squareSize * (row + 1 / 8), 0.75 * squareSize, 0.75 * squareSize];
 }
 
 function drawRect(row, col) {
@@ -79,11 +106,13 @@ function drawLine(x, y, direction, len) {
     if (direction == 1) {
         ctx.lineTo(x, y + len);
     }
-    ctx.lineWidth = 10;
+    ctx.lineWidth = 6;
     ctx.stroke();
 }
 
 function resetPosition() {
+    moveCounter = 0;
+    canplay = true;
     text.innerText = "";
     minotaur = minotaurInit.slice();
     hero = heroInit.slice();
@@ -191,6 +220,11 @@ function minotaurTurn() {
 
 window.onload = function () {
     document.getElementsByTagName('body')[0].onkeydown = function (e) {
+        if (e.key == "r") {
+            resetPosition();
+            res = false;
+        }
+        if (!canplay) return;
         if (e.key == "w") {
             res = goUp(hero);
         }
@@ -206,18 +240,24 @@ window.onload = function () {
         if (e.key == "q") {
             res = true;
         }
-        if (e.key == "r") {
-            resetPosition();
-            res = false;
-        }
+
         if (res) {
             minotaurTurn();
-            if (minotaur[0] == hero[0] && minotaur[1] == hero[1]) {
-                text.innerText = "You lost! Press R to restart"
-            }
             drawBoard();
-            if (exit[0] == hero[0] && exit[1] == hero[1]) {
+            moveCounter++;
+            movecounter.innerText = "Moves: " + moveCounter + "/" + maxMoves;
+
+            if (minotaur[0] == hero[0] && minotaur[1] == hero[1]) {
+                text.innerText = "You got eaten! Press R to restart"
+                canplay = false;
+            }
+            else if (exit[0] == hero[0] && exit[1] == hero[1]) {
                 text.innerText = "You win! Press R to restart"
+                canplay = false;
+            }
+            else if (moveCounter == maxMoves) {
+                text.innerText = "You ran out of moves! Press R to restart"
+                canplay = false;
             }
         }
     }
