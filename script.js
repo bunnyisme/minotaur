@@ -21,28 +21,88 @@ let buffer = 10; // pixels
 * let exitInit = [1, 2];
 */
 
-
-// config
-let horizontalWalls = [[3, 0], [2, 2], [1, 3]];
-let verticalWalls = [[2, 1], [2, 3], [3, 2], [1, 2]];
-let minotaurInit = [0, 0];
-let heroInit = [3, 0];
-let exitInit = [0, 1];
-let maxMoves = 13;
-
-let p = 4;
-
 // Public trackers
 let moveCounter = 0;
+let mapdata = {};
 let url = new URL(window.location.href)
-console.log(url.search)
+if (url.search.length > 0) {
+    let urldata = url.search.slice(1);
+    let decoded = decodeURIComponent(urldata)
+    mapdatamid = JSON.parse(decoded)
+    mapdata = JSON.parse(mapdatamid)
+}
+
+//console.log(urldata)
+// config
+//let mapdata.horizontalWalls = [[3, 0], [2, 2], [1, 3]];
+//let mapdata.verticalWalls = [[2, 1], [2, 3], [3, 2], [1, 2]];
+//let mapdata.minotaurInit = [0, 0];
+//let mapdata.heroInit = [3, 0];
+//let mapdata.exitInit = [0, 1];
+//let mapdata.maxMoves = 13;
+//let mapdata.gridSize = 4;
+
+
+if (Object.keys(mapdata).length === 0) {
+    console.log("i am overwriting!")
+    mapdata = {
+        "horizontalWalls": [
+            [
+                3,
+                0
+            ],
+            [
+                2,
+                2
+            ],
+            [
+                1,
+                3
+            ]
+        ],
+        "verticalWalls": [
+            [
+                2,
+                1
+            ],
+            [
+                2,
+                3
+            ],
+            [
+                3,
+                2
+            ],
+            [
+                1,
+                2
+            ]
+        ],
+        "minotaurInit": [
+            0,
+            0
+        ],
+        "heroInit": [
+            3,
+            0
+        ],
+        "exitInit": [
+            0,
+            1
+        ],
+        "maxMoves": 13,
+        "gridSize": 4
+    }
+}
+
+
 
 // Private trackers
 let res;
 let turnused;
 let canplay = true;
 
-let squareSize = (width - 2 * buffer) / p;
+let squareSize = (width - 2 * buffer) / mapdata.gridSize;
 let dsquareSize = squareSize * 0.75
 
 /*let grid = new Array(p);
@@ -55,18 +115,18 @@ for (let i = 0; i < 3; i++)
 
 // add walls on border
 // [0, 0] ... [0, p-1], [p-1, 0] ... [p-1, p-1]
-for (let i = 0; i < p; i++) {
-    horizontalWalls.push([0, i]);
-    horizontalWalls.push([p, i]);
-    verticalWalls.push([i, 0]);
-    verticalWalls.push([i, p]);
+for (let i = 0; i < mapdata.gridSize; i++) {
+    mapdata.horizontalWalls.push([0, i]);
+    mapdata.horizontalWalls.push([mapdata.gridSize, i]);
+    mapdata.verticalWalls.push([i, 0]);
+    mapdata.verticalWalls.push([i, mapdata.gridSize]);
 }
 
 
 
-let minotaur = minotaurInit.slice();
-let hero = heroInit.slice();
-let exit = exitInit.slice();
+let minotaur = mapdata.minotaurInit.slice();
+let hero = mapdata.heroInit.slice();
+let exit = mapdata.exitInit.slice();
 
 function searchForCoords(list, arr) {
     for (a of list) {
@@ -115,8 +175,8 @@ function resetPosition() {
     moveCounter = 0;
     canplay = true;
     text.innerText = "";
-    minotaur = minotaurInit.slice();
-    hero = heroInit.slice();
+    minotaur = mapdata.minotaurInit.slice();
+    hero = mapdata.heroInit.slice();
     drawBoard();
 }
 
@@ -151,17 +211,18 @@ function drawBoard() {
     ctx.fillStyle = "white";
     ctx.fill();
     ctx.lineWidth = 1;
-    for (let row = 0; row < p; row++) {
-        for (let col = 0; col < p; col++) {
+    for (let row = 0; row < mapdata.gridSize; row++) {
+        for (let col = 0; col < mapdata.gridSize; col++) {
             drawRect(row, col)
+
         }
     }
-    for (wall of horizontalWalls) {
+    for (wall of mapdata.horizontalWalls) {
         let [x, y, len] = getRect(wall[0], wall[1]);
         drawLine(x, y, 0, len)
     }
 
-    for (wall of verticalWalls) {
+    for (wall of mapdata.verticalWalls) {
         let [x, y, len] = getRect(wall[0], wall[1]);
         drawLine(x, y, 1, len)
     }
@@ -182,7 +243,7 @@ drawBoard();
 
 
 function goUp(char) {
-    if (searchForCoords(horizontalWalls, char))
+    if (searchForCoords(mapdata.horizontalWalls, char))
         return false;
     else
         char[0] = char[0] - 1;
@@ -190,14 +251,14 @@ function goUp(char) {
 }
 function goDown(char) {
     charNext = [char[0] + 1, char[1]]
-    if (searchForCoords(horizontalWalls, charNext))
+    if (searchForCoords(mapdata.horizontalWalls, charNext))
         return false;
     else
         char[0] = char[0] + 1
     return true
 }
 function goLeft(char) {
-    if (searchForCoords(verticalWalls, char))
+    if (searchForCoords(mapdata.verticalWalls, char))
         return false;
     else
         char[1] = char[1] - 1
@@ -205,7 +266,7 @@ function goLeft(char) {
 }
 function goRight(char) {
     charNext = [char[0], char[1] + 1]
-    if (searchForCoords(verticalWalls, charNext))
+    if (searchForCoords(mapdata.verticalWalls, charNext))
         return false;
     else
         char[1] = char[1] + 1;
@@ -274,19 +335,22 @@ window.onload = function () {
             minotaurTurn();
             drawBoard();
             moveCounter++;
-            movecounter.innerText = "Moves: " + moveCounter + "/" + maxMoves;
+            movecounter.innerText = "Moves: " + moveCounter + "/" + mapdata.maxMoves;
 
             if (minotaur[0] == hero[0] && minotaur[1] == hero[1]) {
                 text.innerText = "You got eaten! Press R to restart"
                 canplay = false;
             }
-            else if (exit[0] == hero[0] && exit[1] == hero[1]) {
-                text.innerText = "You win! Press R to restart"
+            else if (exit[0] == hero[0] && exit[1] == hero[1] && moveCounter <= mapdata.maxMoves) {
+                text.innerText = "You escaped! Press R to restart"
                 canplay = false;
             }
-            else if (moveCounter == maxMoves) {
-                text.innerText = "You ran out of moves! Press R to restart"
+            else if (exit[0] == hero[0] && exit[1] == hero[1] && moveCounter > mapdata.maxMoves) {
+                text.innerText = "You made it to the exit, but you used too many moves! Press R to restart"
                 canplay = false;
+            }
+            else if (moveCounter == mapdata.maxMoves) {
+                text.innerText = "You ran out of moves, but you may continue playing. Press R to restart"
             }
         }
     }

@@ -1,0 +1,48 @@
+{
+    "horizontalWalls": [
+        [
+            3,
+            0
+        ],
+        [
+            2,
+            2
+        ],
+        [
+            1,
+            3
+        ]
+    ],
+    "verticalWalls": [
+        [
+            2,
+            1
+        ],
+        [
+            2,
+            3
+        ],
+        [
+            3,
+            2
+        ],
+        [
+            1,
+            2
+        ]
+    ],
+    "minotaurInit": [
+        0,
+        0
+    ],
+    "heroInit": [
+        3,
+        0
+    ],
+    "exitInit": [
+        0,
+        1
+    ],
+    "maxMoves": 13,
+    "gridSize": 4
+}
