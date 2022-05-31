@@ -26,7 +26,7 @@ let moveCounter = 0;
 let mapdata = {};
 let url = new URL(window.location.href)
 if (url.search.length > 0) {
-    let urldata = url.search.slice(1);
+    let urldata = url.search.slice(3);
     let decoded = decodeURIComponent(urldata)
     mapdatamid = JSON.parse(decoded)
     mapdata = JSON.parse(mapdatamid)
