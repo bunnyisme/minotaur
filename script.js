@@ -32,6 +32,8 @@ if (url.search.length > 0) {
     mapdata = JSON.parse(mapdatamid)
 }
 
+movecounter.innerText = "Moves: " + moveCounter + "/" + mapdata.maxMoves;
+
 //console.log(urldata)
 // config
 //let mapdata.horizontalWalls = [[3, 0], [2, 2], [1, 3]];
@@ -46,50 +48,11 @@ if (url.search.length > 0) {
 if (Object.keys(mapdata).length === 0) {
     console.log("i am overwriting!")
     mapdata = {
-        "horizontalWalls": [
-            [
-                3,
-                0
-            ],
-            [
-                2,
-                2
-            ],
-            [
-                1,
-                3
-            ]
-        ],
-        "verticalWalls": [
-            [
-                2,
-                1
-            ],
-            [
-                2,
-                3
-            ],
-            [
-                3,
-                2
-            ],
-            [
-                1,
-                2
-            ]
-        ],
-        "minotaurInit": [
-            0,
-            0
-        ],
-        "heroInit": [
-            3,
-            0
-        ],
-        "exitInit": [
-            0,
-            1
-        ],
+        "horizontalWalls": [[3, 0], [2, 2], [1, 3]],
+        "verticalWalls": [[2, 1], [2, 3], [3, 2], [1, 2]],
+        "minotaurInit": [0, 0],
+        "heroInit": [3, 0],
+        "exitInit": [0, 1],
         "maxMoves": 13,
         "gridSize": 4
     }
@@ -169,10 +132,12 @@ function drawLine(x, y, direction, len) {
     }
     ctx.lineWidth = 6;
     ctx.stroke();
+    ctx.lineWidth = 1;
 }
 
 function resetPosition() {
     moveCounter = 0;
+    movecounter.innerText = "Moves: " + moveCounter + "/" + mapdata.maxMoves;
     canplay = true;
     text.innerText = "";
     minotaur = mapdata.minotaurInit.slice();
@@ -308,8 +273,32 @@ function minotaurTurn() {
     if (moves !== 2 && minotaurRow()) moves++;
 }
 
+function resolveTurn() {
+    minotaurTurn();
+    drawBoard();
+    moveCounter++;
+    movecounter.innerText = "Moves: " + moveCounter + "/" + mapdata.maxMoves;
+
+    if (minotaur[0] == hero[0] && minotaur[1] == hero[1]) {
+        text.innerText = "You got eaten! Press R or tap to restart"
+        canplay = false;
+    }
+    else if (exit[0] == hero[0] && exit[1] == hero[1] && moveCounter <= mapdata.maxMoves) {
+        text.innerText = "You escaped! Press R or tap to restart"
+        canplay = false;
+    }
+    else if (exit[0] == hero[0] && exit[1] == hero[1] && moveCounter > mapdata.maxMoves) {
+        text.innerText = "You made it to the exit, but you used too many moves! Press R or tap to restart"
+        canplay = false;
+    }
+    else if (moveCounter == mapdata.maxMoves) {
+        text.innerText = "You ran out of moves, but you may continue playing. Press R or tap to restart"
+    }
+}
+
 window.onload = function () {
     document.getElementsByTagName('body')[0].onkeydown = function (e) {
+        res = false;
         if (e.key == "r") {
             resetPosition();
             res = false;
@@ -332,26 +321,49 @@ window.onload = function () {
         }
 
         if (res) {
-            minotaurTurn();
-            drawBoard();
-            moveCounter++;
-            movecounter.innerText = "Moves: " + moveCounter + "/" + mapdata.maxMoves;
-
-            if (minotaur[0] == hero[0] && minotaur[1] == hero[1]) {
-                text.innerText = "You got eaten! Press R to restart"
-                canplay = false;
-            }
-            else if (exit[0] == hero[0] && exit[1] == hero[1] && moveCounter <= mapdata.maxMoves) {
-                text.innerText = "You escaped! Press R to restart"
-                canplay = false;
-            }
-            else if (exit[0] == hero[0] && exit[1] == hero[1] && moveCounter > mapdata.maxMoves) {
-                text.innerText = "You made it to the exit, but you used too many moves! Press R to restart"
-                canplay = false;
-            }
-            else if (moveCounter == mapdata.maxMoves) {
-                text.innerText = "You ran out of moves, but you may continue playing. Press R to restart"
-            }
+            resolveTurn();
         }
     }
 };
+
+function getCellPosition(canvas, event) {
+    [x, y] = getCursorPosition(canvas, event)
+    let row = Math.floor((y - buffer) / squareSize);
+    let col = Math.floor((x - buffer) / squareSize);
+    return [row, col]
+}
+
+function getCursorPosition(canvas, event) {
+    const rect = canvas.getBoundingClientRect()
+    const x = event.clientX - rect.left
+    const y = event.clientY - rect.top
+    return [x, y]
+}
+
+
+canvas.addEventListener('mousedown', function (e) {
+
+    if (!canplay) {
+        resetPosition();
+        res = false;
+        return;
+    }
+    cell = getCellPosition(canvas, e)
+    if (cell[0] < 0 || cell[0] >= mapdata.gridSize || cell[1] < 0 || cell[1] >= mapdata.gridSize) {
+        return;
+    }
+
+    res = false;
+    if (cell[0] == hero[0]) {
+        if (cell[1] == hero[1]) res = true;
+        if (cell[1] == hero[1] + 1) res = goRight(hero);
+        if (cell[1] == hero[1] - 1) res = goLeft(hero);
+    }
+    if (cell[1] == hero[1]) {
+        if (cell[0] == hero[0] + 1) res = goDown(hero);
+        if (cell[0] == hero[0] - 1) res = goUp(hero);
+    }
+    if (res) {
+        resolveTurn();
+    }
+})
