@@ -8,44 +8,27 @@ let height = canvas.height;
 var ctx = canvas.getContext("2d");
 let buffer = 10; // pixels
 
-/* 
-* THIS IS THE LEVEL 0 MAP SETUP
-* let p = 3; // squares per side
-* // Format [cell thats below it], [row,col]
-* let horizontalWalls = [[1, 1], [2, 1]];
-* //Format [cell thats right of it]. [row,col]
-* let verticalWalls = [[1, 2]];
-* 
-* let minotaurInit = [0, 2];
-* let heroInit = [2, 0];
-* let exitInit = [1, 2];
-*/
-
 // Public trackers
 let moveCounter = 0;
+
 let mapdata = {};
 let url = new URL(window.location.href)
 if (url.search.length > 0) {
     let urldata = url.search.slice(3);
     let decoded = decodeURIComponent(urldata)
     mapdatamid = JSON.parse(decoded)
-    mapdata = JSON.parse(mapdatamid)
+    if (typeof mapdatamid == 'string')
+        mapdata = JSON.parse(mapdatamid)
+    else {
+        mapdata = mapdatamid;
+    }
+
 }
 
-movecounter.innerText = "Moves: " + moveCounter + "/" + mapdata.maxMoves;
-
-//console.log(urldata)
-// config
-//let mapdata.horizontalWalls = [[3, 0], [2, 2], [1, 3]];
-//let mapdata.verticalWalls = [[2, 1], [2, 3], [3, 2], [1, 2]];
-//let mapdata.minotaurInit = [0, 0];
-//let mapdata.heroInit = [3, 0];
-//let mapdata.exitInit = [0, 1];
-//let mapdata.maxMoves = 13;
-//let mapdata.gridSize = 4;
 
 
 if (Object.keys(mapdata).length === 0) {
+
     console.log("i am overwriting!")
     mapdata = {
         "horizontalWalls": [[3, 0], [2, 2], [1, 3]],
@@ -56,6 +39,7 @@ if (Object.keys(mapdata).length === 0) {
         "maxMoves": 13,
         "gridSize": 4
     }
+
 }
 
 
@@ -64,6 +48,8 @@ if (Object.keys(mapdata).length === 0) {
 let res;
 let turnused;
 let canplay = true;
+let moveTrackerHero = [deepCopy(mapdata.heroInit)];
+let moveTrackerMinotaur = [deepCopy(mapdata.minotaurInit)];
 
 let squareSize = (width - 2 * buffer) / mapdata.gridSize;
 let dsquareSize = squareSize * 0.75
@@ -85,11 +71,14 @@ for (let i = 0; i < mapdata.gridSize; i++) {
     mapdata.verticalWalls.push([i, mapdata.gridSize]);
 }
 
+function deepCopy(c) {
+    return JSON.parse(JSON.stringify(c));
+}
 
 
-let minotaur = mapdata.minotaurInit.slice();
-let hero = mapdata.heroInit.slice();
-let exit = mapdata.exitInit.slice();
+let minotaur = deepCopy(mapdata.minotaurInit);
+let hero = deepCopy(mapdata.heroInit);
+let exit = deepCopy(mapdata.exitInit);
 
 function searchForCoords(list, arr) {
     for (a of list) {
@@ -106,6 +95,26 @@ function getInnerRect(row, col) {
     // A mathmatician told me to do this idk why it works
     return [buffer + squareSize * (col + 1 / 8), buffer + squareSize * (row + 1 / 8), 0.75 * squareSize, 0.75 * squareSize];
 }
+
+function drawCentralLine(row, col, row2, col2, color = "blue") {
+    ctx.beginPath();
+    let [x, y, len] = getRect(row, col)
+    let [x2, y2] = getRect(row2, col2)
+    // move to center of cell
+    x += len / 2
+    y += len / 2
+    x2 += len / 2
+    y2 += len / 2
+    ctx.moveTo(x, y);
+    // draw the right direction
+
+    ctx.lineTo(x2, y2)
+
+    ctx.strokeStyle = color;
+    ctx.stroke();
+    ctx.strokeStyle = "black"
+}
+
 
 function drawRect(row, col) {
     ctx.beginPath();
@@ -140,10 +149,14 @@ function resetPosition() {
     movecounter.innerText = "Moves: " + moveCounter + "/" + mapdata.maxMoves;
     canplay = true;
     text.innerText = "";
-    minotaur = mapdata.minotaurInit.slice();
-    hero = mapdata.heroInit.slice();
+    minotaur = deepCopy(mapdata.minotaurInit);
+    hero = deepCopy(mapdata.heroInit);
+    moveTrackerHero = [deepCopy(mapdata.heroInit)];
+    moveTrackerMinotaur = [deepCopy(mapdata.minotaurInit)];
     drawBoard();
 }
+
+
 
 const exit_image = new Image();
 exit_image.src = './imgs/exit.png';
@@ -163,6 +176,8 @@ minotaur_image.onload = function () {
     ctx.drawImage(minotaur_image, ...getInnerRect(...minotaur));
 };
 
+
+
 function addImage(row, col, name) {
     if (name == "hero") img = hero_image;
     else if (name == "exit") img = exit_image;
@@ -171,10 +186,13 @@ function addImage(row, col, name) {
     ctx.drawImage(img, ...getInnerRect(row, col));
 }
 
+resetPosition();
+
 function drawBoard() {
     ctx.rect(0, 0, width, height)
     ctx.fillStyle = "white";
     ctx.fill();
+
     ctx.lineWidth = 1;
     for (let row = 0; row < mapdata.gridSize; row++) {
         for (let col = 0; col < mapdata.gridSize; col++) {
@@ -192,10 +210,21 @@ function drawBoard() {
         drawLine(x, y, 1, len)
     }
 
+    addImage(...exit, 'exit')
+    let mLastIndex = moveTrackerMinotaur.length - 1;
+    let hLastIndex = moveTrackerHero.length - 1;
+    if (mLastIndex > 0) {
+        // minotaur 2 trail
+        drawCentralLine(...moveTrackerMinotaur[mLastIndex], ...moveTrackerMinotaur[mLastIndex - 1], "red")
+        drawCentralLine(...moveTrackerMinotaur[mLastIndex - 1], ...moveTrackerMinotaur[mLastIndex - 2], "red")
+        // hero 1 trail
+        drawCentralLine(...moveTrackerHero[hLastIndex], ...moveTrackerHero[hLastIndex - 1], "green")
+    }
+
     //fillRect(...exit, "blue");
     //fillRect(...hero, "green");
     //fillRect(...minotaur, "red");
-    addImage(...exit, 'exit')
+
     addImage(...hero, 'hero')
     addImage(...minotaur, 'minotaur')
 
@@ -248,6 +277,9 @@ function minotaurColumn() {
     } else {
         res = false;
     }
+    if (res) {
+        moveTrackerMinotaur.push(deepCopy(minotaur))
+    }
     return res;
 }
 function minotaurRow() {
@@ -260,6 +292,9 @@ function minotaurRow() {
     } else {
         res = false;
     }
+    if (res) {
+        moveTrackerMinotaur.push(deepCopy(minotaur))
+    }
     return res;
 }
 
@@ -271,10 +306,19 @@ function minotaurTurn() {
     if (moves !== 2 && minotaurRow()) moves++;
     if (moves !== 2 && minotaurColumn()) moves++;
     if (moves !== 2 && minotaurRow()) moves++;
+    if (moves == 0) {
+        moveTrackerMinotaur.push(deepCopy(minotaur))
+        moveTrackerMinotaur.push(deepCopy(minotaur))
+    }
+    if (moves == 1) {
+        moveTrackerMinotaur.push(deepCopy(minotaur))
+    }
+
 }
 
 function resolveTurn() {
     minotaurTurn();
+    moveTrackerHero.push(deepCopy(hero));
     drawBoard();
     moveCounter++;
     movecounter.innerText = "Moves: " + moveCounter + "/" + mapdata.maxMoves;
@@ -302,6 +346,26 @@ window.onload = function () {
         if (e.key == "r") {
             resetPosition();
             res = false;
+        }
+        if (e.key == "z") {
+            if (!canplay) {
+                canplay = true;
+                text.innerText = "";
+            }
+            if (moveTrackerHero.length == 1) return
+            // remove the last move from each
+            a = moveTrackerMinotaur.pop()
+            a = moveTrackerMinotaur.pop()
+            b = moveTrackerHero.pop()
+
+            // revert the moves
+            minotaur = deepCopy(moveTrackerMinotaur[moveTrackerMinotaur.length - 1])
+            hero = deepCopy(moveTrackerHero[moveTrackerHero.length - 1])
+            moveCounter = moveCounter - 1;
+            movecounter.innerText = "Moves: " + moveCounter + "/" + mapdata.maxMoves;
+            drawBoard();
+            res = false;
+
         }
         if (!canplay) return;
         if (e.key == "w") {
