@@ -8,19 +8,6 @@ let height = canvas.height;
 var ctx = canvas.getContext("2d");
 let buffer = 10; // pixels
 
-/* 
-* THIS IS THE LEVEL 0 MAP SETUP
-* let p = 3; // squares per side
-* // Format [cell thats below it], [row,col]
-* let horizontalWalls = [[1, 1], [2, 1]];
-* //Format [cell thats right of it]. [row,col]
-* let verticalWalls = [[1, 2]];
-* 
-* let minotaurInit = [0, 2];
-* let heroInit = [2, 0];
-* let exitInit = [1, 2];
-*/
-
 // Public trackers
 let moveCounter = 0;
 let mapdata = {};
@@ -29,23 +16,18 @@ if (url.search.length > 0) {
     let urldata = url.search.slice(3);
     let decoded = decodeURIComponent(urldata)
     mapdatamid = JSON.parse(decoded)
-    mapdata = JSON.parse(mapdatamid)
+    if (typeof mapdatamid == 'string')
+        mapdata = JSON.parse(mapdatamid)
+    else {
+        mapdata = mapdatamid;
+    }
+
 }
 
-movecounter.innerText = "Moves: " + moveCounter + "/" + mapdata.maxMoves;
-
-//console.log(urldata)
-// config
-//let mapdata.horizontalWalls = [[3, 0], [2, 2], [1, 3]];
-//let mapdata.verticalWalls = [[2, 1], [2, 3], [3, 2], [1, 2]];
-//let mapdata.minotaurInit = [0, 0];
-//let mapdata.heroInit = [3, 0];
-//let mapdata.exitInit = [0, 1];
-//let mapdata.maxMoves = 13;
-//let mapdata.gridSize = 4;
 
 
 if (Object.keys(mapdata).length === 0) {
+
     console.log("i am overwriting!")
     mapdata = {
         "horizontalWalls": [[3, 0], [2, 2], [1, 3]],
@@ -56,6 +38,7 @@ if (Object.keys(mapdata).length === 0) {
         "maxMoves": 13,
         "gridSize": 4
     }
+
 }
 
 
@@ -145,6 +128,8 @@ function resetPosition() {
     drawBoard();
 }
 
+
+
 const exit_image = new Image();
 exit_image.src = './imgs/exit.png';
 exit_image.onload = function () {
@@ -163,6 +148,8 @@ minotaur_image.onload = function () {
     ctx.drawImage(minotaur_image, ...getInnerRect(...minotaur));
 };
 
+
+
 function addImage(row, col, name) {
     if (name == "hero") img = hero_image;
     else if (name == "exit") img = exit_image;
@@ -171,6 +158,7 @@ function addImage(row, col, name) {
     ctx.drawImage(img, ...getInnerRect(row, col));
 }
 
+resetPosition();
 function drawBoard() {
     ctx.rect(0, 0, width, height)
     ctx.fillStyle = "white";
@@ -319,7 +307,6 @@ window.onload = function () {
         if (e.key == "q") {
             res = true;
         }
-
         if (res) {
             resolveTurn();
         }
